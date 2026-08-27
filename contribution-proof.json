@@ -1,0 +1,7 @@
+{
+  "artifact_url": "https://github.com/farizvect/technocore-did-starter/commit/98ecde6c8665bb91931a2ba58d1978bbfa48feca",
+  "commit": "98ecde6c8665bb91931a2ba58d1978bbfa48feca",
+  "did": "did:key:z6MkiemqrU5gdm3V6okrpw1nKqy3tNPhpqfFRtFHdVA3JMBk",
+  "schema": "technocore-contribution-proof-v1",
+  "signature": "Z_eiI-TXh-HbKIv5UdV6zNkQoncsg8T1gCi7_UCUj7JUHhU3WNW7KRL9IBSP1yvGHSUZe_QDv3XevSGX_tyeDw"
+}
