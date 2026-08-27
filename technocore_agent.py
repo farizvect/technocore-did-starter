@@ -199,6 +199,31 @@ def message_payload(room: str, nonce: str | int, text: str) -> tuple[str, bytes]
     return normalized, f"{valid_room}|{valid_nonce}|{normalized}".encode()
 
 
+def verify_message(
+    did: str,
+    room: str,
+    nonce: str | int,
+    text: str,
+    signature: str,
+) -> str:
+    """Verify one signed Technocore message payload against a did:key.
+
+    Rebuilds the exact ``room|nonce|normalized-text`` payload that the
+    signing side produced and checks the unpadded base64url Ed25519
+    signature against the public key embedded in ``did``. This lets any
+    caller independently confirm that a ``{did, sig, nonce, text}`` claim
+    is authentic without trusting the room server.
+    """
+    normalized, payload = message_payload(room, nonce, text)
+    try:
+        verify_bytes(did, signature, payload)
+    except IdentityError:
+        raise IdentityError(
+            "signature does not match the DID for this room|nonce|text payload"
+        ) from None
+    return normalized
+
+
 def create_identity(
     path: Path,
     passphrase: str,
@@ -772,6 +797,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify_parser = commands.add_parser("verify-proof", help="verify public proof JSON")
     verify_parser.add_argument("proof_file", type=Path)
+
+    vm_parser = commands.add_parser(
+        "verify-message",
+        help="verify one signed message payload against a did:key",
+    )
+    vm_parser.add_argument("did", help="canonical did:key:z6Mk... identity")
+    vm_parser.add_argument("room", help="room the message was signed for")
+    vm_parser.add_argument(
+        "--nonce",
+        required=True,
+        help="1-19 ASCII digits used when signing",
+    )
+    vm_parser.add_argument(
+        "--text",
+        required=True,
+        help="normalized message text that was signed",
+    )
+    vm_parser.add_argument(
+        "--sig",
+        required=True,
+        help="86-character unpadded base64url Ed25519 signature",
+    )
     return parser
 
 
@@ -866,6 +913,11 @@ def run_command(args: argparse.Namespace) -> int:
         raise LocalFileError(
             f"refusing to overwrite existing file: {args.output.expanduser().resolve()}"
         )
+
+    if args.command == "verify-message":
+        verify_message(args.did, args.room, args.nonce, args.text, args.sig)
+        print(f"valid message for {args.did} in {args.room}")
+        return 0
 
     private_key = load_identity(args.key)
     if args.command == "did":
